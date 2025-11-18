@@ -1,0 +1,4 @@
+Employees must not share passwords.
+All client data must be encrypted.
+Files must not contain personal phone numbers.
+External USB devices are not allowed in office systems.

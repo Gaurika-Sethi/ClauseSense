@@ -3,6 +3,7 @@
 from orchestrator.orchestrator_agent import OrchestratorAgent
 from ingestion.ingest_agent import DocumentIngestionAgent
 from policy.rule_agent import PolicyRuleAgent
+from retrieval.retrieval_agent import RetrievalAgent
 
 def run(filepath):
     # Phase 0
@@ -25,6 +26,21 @@ def run(filepath):
     print("\n--- Shared State After Phase 2 ---")
     print(orchestrator.shared_state)
     print("----------------------------------\n")
+
+# Phase 3 — Retrieve relevant rules
+    retrieval_agent = RetrievalAgent()
+    relevant_rules = retrieval_agent.find_relevant_rules(
+        orchestrator.shared_state["extracted_text"],
+        orchestrator.shared_state["policy_rules"]
+    )
+    orchestrator.shared_state["relevant_rules"] = relevant_rules
+
+    print("\n--- Relevant Rules Found (Phase 3) ---")
+    for r in relevant_rules:
+        print(f"[ID: {r['id']}] {r['category']} → {r['rule_text']}")
+    print("--------------------------------------\n")
+
+    return orchestrator.shared_state
 
     return extracted
 

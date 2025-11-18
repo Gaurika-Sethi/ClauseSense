@@ -1,10 +1,4 @@
-# ClauseSense AI
-Phase 0: Orchestrator Initialization Complete
+Call me at 9382770388
 
-✔ Validates file  
-✔ Creates shared state  
-✔ Stores metadata  
-✔ Prepares pipeline for next phases  
 
-Run:
-python main.py
+The password for production is admin123.

@@ -1,32 +1,29 @@
-import re
-
 class RetrievalAgent:
-    def __init__(self):
-        pass
+    def __init__(self, shared_state):
+        self.shared_state = shared_state
 
-    def find_relevant_rules(self, document_text, policy_rules):
-        """
-        Returns only the rules that are relevant to the document
-        based on keyword matching.
+    def find_relevant_rules(self):
+        if "policy_rules" not in self.shared_state or "extracted_text" not in self.shared_state:
+            print("[PHASE 3] Missing input for rule retrieval.")
+            return []
 
-        Parameters:
-        document_text (str): Raw extracted text of the uploaded document.
-        policy_rules (list): List of rules, where each rule contains fields:
-                             {id, category, rule_text, keywords}
+        document_text = self.shared_state["extracted_text"].lower()
+        rules = self.shared_state["policy_rules"]
+        matches = []
 
-        Returns:
-        list: Relevant policy rules
-        """
-        document_text = document_text.lower()
-        relevant_rules = []
+        for rule in rules:
+            rule_text = rule["text"].lower()
 
-        for rule in policy_rules:
-            keywords = rule.get("keywords", [])
-            for keyword in keywords:
-                # Match keyword as whole word (avoid matching inside other words)
-                pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
-                if re.search(pattern, document_text):
-                    relevant_rules.append(rule)
-                    break  # no need to check remaining keywords for this rule
+            # fuzzy/simplified matching
+            if "phone" in rule_text and any(char.isdigit() for char in document_text):
+                matches.append(rule)
+            if "password" in rule_text and "password" in document_text:
+                matches.append(rule)
+            if "encrypted" in rule_text and "encrypt" in document_text:
+                matches.append(rule)
 
-        return relevant_rules
+        # 🔥 THIS WAS MISSING
+        self.shared_state["matched_rules"] = matches
+
+        print(f"[PHASE 3] Retrieval complete — {len(matches)} relevant rule(s) found.")
+        return matches

@@ -4,6 +4,7 @@ from orchestrator.orchestrator_agent import OrchestratorAgent
 from ingestion.ingest_agent import DocumentIngestionAgent
 from policy.rule_agent import PolicyRuleAgent
 from retrieval.retrieval_agent import RetrievalAgent
+from compliance.compliance_agent import ComplianceAgent
 
 def run(filepath):
     # Phase 0
@@ -28,22 +29,32 @@ def run(filepath):
     print("----------------------------------\n")
 
 # Phase 3 — Retrieve relevant rules
-    retrieval_agent = RetrievalAgent()
-    relevant_rules = retrieval_agent.find_relevant_rules(
-        orchestrator.shared_state["extracted_text"],
-        orchestrator.shared_state["policy_rules"]
-    )
-    orchestrator.shared_state["relevant_rules"] = relevant_rules
+    retrieval_agent = RetrievalAgent(orchestrator.shared_state)
+    relevant_rules = retrieval_agent.find_relevant_rules()
 
     print("\n--- Relevant Rules Found (Phase 3) ---")
-    for r in relevant_rules:
-        print(f"[ID: {r['id']}] {r['category']} → {r['rule_text']}")
+    print("--------------------------------------")
+    if relevant_rules:
+        for r in relevant_rules:
+            print(f"[{r['rule_id']}] {r['text']}")
+    else:
+        print("No matching policy rules detected.")
     print("--------------------------------------\n")
 
+# Phase 4 — Compliance Evaluation
+    compliance_agent = ComplianceAgent(orchestrator.shared_state)
+    violations = compliance_agent.evaluate_compliance()
+
+    print("\n--- Compliance Report (Phase 4) ---")
+    if violations:
+        for v in violations:
+            print(f"❌ [{v['rule_id']}] {v['rule_text']}")
+            print(f"   Evidence → \"{v['evidence']}\"")
+            print(f"   Severity → {v['severity']}\n")
+    else:
+        print("✔ Document is fully compliant — no issues detected.")
+    print("--------------------------------------\n")
     return orchestrator.shared_state
-
-    return extracted
-
 
 if __name__ == "__main__":
     run("sample_doc.txt")   # Make sure this file exists!

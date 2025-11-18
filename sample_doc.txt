@@ -1,0 +1,10 @@
+# ClauseSense AI
+Phase 0: Orchestrator Initialization Complete
+
+✔ Validates file  
+✔ Creates shared state  
+✔ Stores metadata  
+✔ Prepares pipeline for next phases  
+
+Run:
+python main.py

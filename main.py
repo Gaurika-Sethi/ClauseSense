@@ -1,5 +1,6 @@
 # main.py
 
+import config
 from orchestrator.orchestrator_agent import OrchestratorAgent
 from ingestion.ingest_agent import DocumentIngestionAgent
 from policy.rule_agent import PolicyRuleAgent

@@ -1,53 +1,33 @@
 # rewrite/rewrite_agent.py
 
-class RewriteAgent:
-    """
-    Generates safe rewrite suggestions for violated sections.
-    This version is rule-based and simple — Gemini will replace this later.
-    """
+from gemini.gemini_client import generate_completion, is_configured
+from gemini.prompts.rewrite_prompts import build_rewrite_prompt
 
+class RewriteAgent:
     def __init__(self, shared_state):
         self.shared_state = shared_state
 
-    def generate_rewrites(self):
+    def generate_rewrites(self, style="moderate"):
         violations = self.shared_state.get("violations", [])
         rewrites = []
 
         for v in violations:
+            original_text = v["section"]
+            rule_text = v["rule_text"]
             rule_id = v["rule_id"]
-            evidence = v["evidence"]
 
-            if rule_id == "R1":      # Password rule
-                suggestion = (
-                    "Remove shared passwords. Replace with: "
-                    "\"All passwords are stored securely and never shared publicly.\""
-                )
-
-            elif rule_id == "R2":    # Encryption rule
-                suggestion = (
-                    "Ensure data is encrypted. You can rewrite as: "
-                    "\"All client data is encrypted both in transit and at rest.\""
-                )
-
-            elif rule_id == "R3":    # Phone numbers rule
-                suggestion = (
-                    "Remove personal phone numbers. Replace them with anonymized contact info like: "
-                    "\"Contact our support team at [official number].\""
-                )
-
-            elif rule_id == "R4":    # USB rule
-                suggestion = (
-                    "Remove mention of USB usage. Replace with compliant text: "
-                    "\"External USB storage devices are not permitted on office systems.\""
-                )
-
+            if is_configured():
+                prompt = build_rewrite_prompt(original_text, rule_text, style)
+                rewritten = generate_completion(prompt, max_tokens=250)
             else:
-                suggestion = "Rewrite needed, but no template available."
+                rewritten = (
+                    original_text + "\n[Fallback rewrite: make this compliant manually]"
+                )
 
             rewrites.append({
                 "rule_id": rule_id,
-                "original_text": evidence,
-                "rewrite_suggestion": suggestion
+                "original_text": original_text,
+                "rewrite_suggestion": rewritten
             })
 
         self.shared_state["rewrites"] = rewrites

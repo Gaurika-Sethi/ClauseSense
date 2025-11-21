@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()  # Load .env
 
 API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 def is_configured() -> bool:
     return API_KEY is not None and API_KEY != ""

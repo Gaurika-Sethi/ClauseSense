@@ -12,6 +12,7 @@ class ReportAgent:
         matched_rules = self.shared_state.get("matched_rules", [])
         violations = self.shared_state.get("violations", [])
         rewrite_suggestions = self.shared_state.get("rewrite_suggestions", [])
+        explanations = self.shared_state.get("explanations", {})
 
         lines = []
         lines.append("=== ClauseSense Compliance Report ===\n")
@@ -40,6 +41,18 @@ class ReportAgent:
         else:
             lines.append("✔ No violations — fully compliant.")
 
+        # Explanations + Confidence Scores
+        lines.append("\n\n--- Rule Explanations ---")
+        if explanations:
+            for rule_id, items in explanations.items():
+                lines.append(f"\n### Rule {rule_id} ###")
+                for entry in items:
+                    lines.append(f"- Section: {entry['section']}")
+                    lines.append(f"  Confidence: {entry.get('confidence', 'N/A')}")
+                    lines.append(f"  Explanation: {entry['explanation']}")
+        else:
+            lines.append("No explanations available.")
+
         # Rewrite Suggestions
         lines.append("\n\n--- Rewrite Suggestions ---")
         if rewrite_suggestions:
@@ -67,6 +80,7 @@ class ReportAgent:
             "matched_rules": self.shared_state.get("matched_rules", []),
             "violations": self.shared_state.get("violations", []),
             "rewrite_suggestions": self.shared_state.get("rewrite_suggestions", []),
+            "explanations": self.shared_state.get("explanations", {}),  # ✅ NEW
         }
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(export_data, f, indent=4)

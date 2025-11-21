@@ -1,6 +1,7 @@
 # main.py
 
 import config
+import json
 from orchestrator.orchestrator_agent import OrchestratorAgent
 from ingestion.ingest_agent import DocumentIngestionAgent
 from policy.rule_agent import PolicyRuleAgent
@@ -62,12 +63,46 @@ def run(filepath):
             print(f"{status} [{rule}] {explanation}")
             print(f"   Evidence → \"{evidence}\"\n")
 
+    # Phase 4.5 — Explanations + Confidence
+    from rule_explaination import generate_rule_explanations
+    explanations = generate_rule_explanations(
+        orchestrator.shared_state["sections"],
+        relevant_rules
+    )
 
-    # Phase 5 — Rewrite Suggestions (Gemini)
+    orchestrator.shared_state["explanations"] = explanations
+
+    # ★ NEW: Extract confidence and store in proper structure
+    confidence_scores = {}
+    for rule_id, items in explanations.items():
+        confidence_scores[rule_id] = [
+            {
+                "section": entry["section"],
+                "confidence": entry.get("confidence", 0.0)
+            }
+            for entry in items
+        ]
+
+    orchestrator.shared_state["confidence_scores"] = confidence_scores
+
+    # Debug output
+    print("\n--- Rule Explanations with Confidence Scores ---")
+    for rule_id, items in explanations.items():
+        print(f"\n### {rule_id} ###")
+        for entry in items:
+            print(f"- Section: {entry['section']}")
+            print(f"  Confidence: {entry['confidence']}")
+            print(f"  Explanation: {entry['explanation']}")
+    print("----------------------------------\n")
+
+
+
+    # Phase 5 — Rewrite Suggestions
     orchestrator.shared_state["config"] = {
         "GEMINI_API_KEY": GEMINI_API_KEY,
         "MODEL": GEMINI_MODEL
-        }
+    }
+
     rewrite_agent = RewriteAgent(orchestrator.shared_state)
     rewrites = rewrite_agent.generate_rewrites()
 
@@ -82,6 +117,15 @@ def run(filepath):
             print(f"• Suggested Rewrite: {r['rewrite']}")
     print("--------------------------------------")
 
+    print("CONFIDENCE DEBUG =", orchestrator.shared_state.get("confidence_scores"))
+
+    # Phase 7.4 — Unify
+    from reconstruction.unifier import unify_results
+    orchestrator.shared_state["unified"] = unify_results(orchestrator.shared_state)
+
+    print("\n--- Unified Results (Phase 7.4) ---")
+    for u in orchestrator.shared_state["unified"]:
+        print(json.dumps(u, indent=4))
 
     # Phase 6 — Final Report Generation
     report_agent = ReportAgent(orchestrator.shared_state)

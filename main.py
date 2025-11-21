@@ -8,6 +8,7 @@ from retrieval.retrieval_agent import RetrievalAgent
 from compliance.compliance_agent import ComplianceAgent
 from rewrite.rewrite_agent import RewriteAgent
 from reporting.report_agent import ReportAgent
+from config import GEMINI_API_KEY, GEMINI_MODEL
 
 def run(filepath):
     # Phase 0
@@ -49,28 +50,38 @@ def run(filepath):
     violations = compliance_agent.evaluate_compliance()
 
     print("\n--- Compliance Report (Phase 4) ---")
-    if violations:
-        for v in violations:
-            print(f"❌ [{v['rule_id']}] {v['rule_text']}")
-            print(f"   Evidence → \"{v['evidence']}\"")
-            print(f"   Severity → {v['severity']}\n")
-    else:
+    if not violations:
         print("✔ Document is fully compliant — no issues detected.")
-    print("--------------------------------------\n")
+    else:
+        for v in violations:
+            status = "❌" if not v.get("is_compliant", True) else "✔"
+            rule = v.get("rule_id", "Unknown")
+            explanation = v.get("explanation", "No explanation provided.")
+            evidence = v.get("evidence", "(no evidence provided)")
 
-    # Phase 5 — Rewrite suggestions  (FIXED INDENTATION)
+            print(f"{status} [{rule}] {explanation}")
+            print(f"   Evidence → \"{evidence}\"\n")
+
+
+    # Phase 5 — Rewrite Suggestions (Gemini)
+    orchestrator.shared_state["config"] = {
+        "GEMINI_API_KEY": GEMINI_API_KEY,
+        "MODEL": GEMINI_MODEL
+        }
     rewrite_agent = RewriteAgent(orchestrator.shared_state)
     rewrites = rewrite_agent.generate_rewrites()
 
     print("\n--- Rewrite Suggestions (Phase 5) ---")
-    if rewrites:
-        for r in rewrites:
-            print(f"\nRule {r['rule_id']} Fix:")
-            print(f"⚠ Original: {r['original_text']}")
-            print(f"✅ Suggestion: {r['rewrite_suggestion']}")
+    if not rewrites:
+        print("No rewrites needed.")
     else:
-        print("No rewrites needed — the document is compliant.")
-    print("--------------------------------------\n")
+        for r in rewrites:
+            print(f"\n🔁 Rule {r['rule_id']} Fix:")
+            print(f"• Issue: {r['rule_text']}")
+            print(f"• Original: {r['original']}")
+            print(f"• Suggested Rewrite: {r['rewrite']}")
+    print("--------------------------------------")
+
 
     # Phase 6 — Final Report Generation
     report_agent = ReportAgent(orchestrator.shared_state)

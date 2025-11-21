@@ -3,53 +3,53 @@
 import json
 from gemini.gemini_client import generate_completion, is_configured
 from gemini.prompts.compliance_prompts import build_compliance_prompt
+from gemini.utils import parse_json_safe              # <-- IMPORTANT
 
 class ComplianceAgent:
     def __init__(self, shared_state):
         self.shared_state = shared_state
 
     def evaluate_compliance(self):
-        rules = self.shared_state.get("matched_rules", [])
+        violations = []
+
+        matched_rules = self.shared_state.get("matched_rules", [])
         sections = self.shared_state.get("sections", [])
-        results = []
 
-        for rule in rules:
-            rule_id = rule.get("rule_id")
-            rule_text = rule.get("text", "")
-
+        for rule in matched_rules:
             for sec in sections:
-                sec_text = sec.strip()
 
-                if is_configured():
-                    prompt = build_compliance_prompt(sec_text, rule_text, rule_id)
-                    response = generate_completion(prompt, max_tokens=300)
+                try:
+                    prompt = build_compliance_prompt(rule["text"], sec)
+                    raw_output = generate_completion(prompt)
 
-                    try:
-                        parsed = json.loads(response)
-                        status = parsed.get("status", "Partial")
-                        severity = parsed.get("severity", "Medium")
-                        explanation = parsed.get("explanation", "")
-                    except:
-                        status = "Partial"
-                        severity = "Low"
-                        explanation = "Gemini returned non-JSON, fallback applied."
-                else:
-                    # fallback logic (when no API key)
-                    status = "Partial"
-                    severity = "Low"
-                    explanation = "Gemini disabled — fallback heuristic."
+                    result = parse_json_safe(raw_output)
 
-                # Only record violations or partial matches
-                if status in ["Violation", "Partial"]:
-                    results.append({
-                        "rule_id": rule_id,
-                        "rule_text": rule_text,
-                        "section": sec_text,
-                        "status": status,
-                        "severity": severity,
-                        "explanation": explanation
-                    })
+                    # Ensure dict format
+                    if not isinstance(result, dict):
+                        raise ValueError("Gemini returned non-JSON")
 
-        self.shared_state["violations"] = results
-        return results
+                    # 🔐 Mandatory fields guaranteed
+                    result.setdefault("rule_id", rule["rule_id"])
+                    result.setdefault("rule_text", rule["text"])
+                    result.setdefault("section", sec)
+                    result.setdefault("status", "Violation")
+                    result.setdefault("severity", "High")
+                    result.setdefault("evidence", "(missing)")
+                    result.setdefault("explanation", "(not provided)")
 
+                except Exception:
+                    # Fallback object
+                    result = {
+                        "rule_id": rule["rule_id"],
+                        "rule_text": rule["text"],
+                        "section": sec,
+                        "status": "Violation",
+                        "severity": "High",
+                        "evidence": sec,
+                        "explanation": "Gemini returned non-JSON, fallback applied."
+                    }
+
+                violations.append(result)
+
+        self.shared_state["violations"] = violations
+        return violations

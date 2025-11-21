@@ -1,34 +1,48 @@
 # rewrite/rewrite_agent.py
 
-from gemini.gemini_client import generate_completion, is_configured
+import google.generativeai as genai
 from gemini.prompts.rewrite_prompts import build_rewrite_prompt
 
-class RewriteAgent:
-    def __init__(self, shared_state):
-        self.shared_state = shared_state
 
-    def generate_rewrites(self, style="moderate"):
-        violations = self.shared_state.get("violations", [])
-        rewrites = []
+class RewriteAgent:
+    def __init__(self, state):
+        self.state = state
+
+        config = self.state.get("config", {})
+        api_key = config.get("GEMINI_API_KEY")
+        model = config.get("MODEL")
+
+        if not api_key or not model:
+            raise ValueError("Gemini API key or model is missing in shared state config.")
+
+        # Configure Gemini
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(model)
+
+    def generate_rewrites(self):
+        violations = self.state.get("violations", [])
+        rewrite_suggestions = []
 
         for v in violations:
-            original_text = v["section"]
-            rule_text = v["rule_text"]
-            rule_id = v["rule_id"]
+            if not isinstance(v, dict):
+                print(f"[REWRITE] ❌ Skipped → Non-dict violation record: {v}")
+                continue
 
-            if is_configured():
-                prompt = build_rewrite_prompt(original_text, rule_text, style)
-                rewritten = generate_completion(prompt, max_tokens=250)
-            else:
-                rewritten = (
-                    original_text + "\n[Fallback rewrite: make this compliant manually]"
-                )
+            rule_id = v.get("rule_id")
+            evidence = v.get("evidence")
+            rule_text = v.get("rule_text")
+            severity = v.get("severity", "Compliant")
 
-            rewrites.append({
-                "rule_id": rule_id,
-                "original_text": original_text,
-                "rewrite_suggestion": rewritten
-            })
+            # only rewrite real violations
+            if severity.lower() != "compliant":
+                rewrite_suggestions.append({
+                    "rule_id": rule_id,
+                    "original": evidence,
+                    "rule_text": rule_text,
+                    "rewrite": f"[Remove or redact confidential information from: '{evidence}']"
+                })
 
-        self.shared_state["rewrites"] = rewrites
-        return rewrites
+        self.state["rewrite_suggestions"] = rewrite_suggestions
+        return rewrite_suggestions
+
+

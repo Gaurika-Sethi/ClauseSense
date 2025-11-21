@@ -11,7 +11,7 @@ class ReportAgent:
         metadata = self.shared_state.get("document_metadata", {})
         matched_rules = self.shared_state.get("matched_rules", [])
         violations = self.shared_state.get("violations", [])
-        rewrites = self.shared_state.get("rewrites", [])
+        rewrite_suggestions = self.shared_state.get("rewrite_suggestions", [])
 
         lines = []
         lines.append("=== ClauseSense Compliance Report ===\n")
@@ -23,7 +23,7 @@ class ReportAgent:
             lines.append(f"{k}: {v}")
 
         # Matched Rules
-        lines.append("\n--- Matched Policy Rules ---")
+        lines.append("\n\n--- Matched Policy Rules ---")
         if matched_rules:
             for r in matched_rules:
                 lines.append(f"[{r['rule_id']}] {r['text']}")
@@ -31,7 +31,7 @@ class ReportAgent:
             lines.append("No matched rules.")
 
         # Violations
-        lines.append("\n--- Violations Detected ---")
+        lines.append("\n\n--- Violations Detected ---")
         if violations:
             for v in violations:
                 lines.append(f"\n❌ {v['rule_id']} - {v['rule_text']}")
@@ -41,12 +41,13 @@ class ReportAgent:
             lines.append("✔ No violations — fully compliant.")
 
         # Rewrite Suggestions
-        lines.append("\n--- Rewrite Suggestions ---")
-        if rewrites:
-            for r in rewrites:
-                lines.append(f"\nRule {r['rule_id']} Fix:")
-                lines.append(f"Original: {r['original_text']}")
-                lines.append(f"Suggestion: {r['rewrite_suggestion']}")
+        lines.append("\n\n--- Rewrite Suggestions ---")
+        if rewrite_suggestions:
+            for r in rewrite_suggestions:
+                lines.append(f"\n🔁 Rule {r['rule_id']} Fix:")
+                lines.append(f"• Issue: {r['rule_text']}")
+                lines.append(f"• Original: {r['original']}")
+                lines.append(f"• Suggested Rewrite: {r['rewrite']}")
         else:
             lines.append("No rewrites needed.")
 
@@ -65,7 +66,7 @@ class ReportAgent:
             "metadata": self.shared_state.get("document_metadata", {}),
             "matched_rules": self.shared_state.get("matched_rules", []),
             "violations": self.shared_state.get("violations", []),
-            "rewrites": self.shared_state.get("rewrites", []),
+            "rewrite_suggestions": self.shared_state.get("rewrite_suggestions", []),
         }
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(export_data, f, indent=4)

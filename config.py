@@ -1,26 +1,16 @@
-# config.py
-
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai
+import streamlit as st
 
-# Load .env
 load_dotenv()
 
-# Read environment variables
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-
-# Indicate status
-print("[CONFIG] Gemini API Key Loaded:", bool(GEMINI_API_KEY))
-print("[CONFIG] Using Model:", GEMINI_MODEL)
-
-# Configure Gemini SDK
-if GEMINI_API_KEY:
-    try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        print("[CONFIG] Gemini SDK configured successfully.")
-    except Exception as e:
-        print("[CONFIG ERROR] Failed to configure Gemini:", str(e))
+# Prefer Streamlit secrets in deployment
+if "GEMINI_API_KEY" in st.secrets:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    GEMINI_MODEL = st.secrets.get("GEMINI_MODEL", "gemini-2.0-flash")
 else:
-    print("[CONFIG WARNING] No API Key found! Running in STUB mode.")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+print("[CONFIG] Gemini API Key Loaded:", GEMINI_API_KEY is not None)
+print("[CONFIG] Using Model:", GEMINI_MODEL)

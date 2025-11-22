@@ -1,4 +1,6 @@
-Employees must not share passwords.
-All client data must be encrypted.
-Files must not contain personal phone numbers.
-External USB devices are not allowed in office systems.
+R1: Employees must not share passwords in any form.
+R2: All client data must be encrypted before storage or transmission.
+R3: Files must not contain personal phone numbers or personally identifiable contact information.
+R4: External USB devices are not allowed for transferring internal or client files.
+R5: Internal credentials and access tokens must not be included in published or shared documents.
+R6: Sensitive information must only be transmitted over authorized VPN channels.

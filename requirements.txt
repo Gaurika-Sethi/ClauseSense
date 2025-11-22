@@ -1,0 +1,8 @@
+streamlit
+python-dotenv
+google-generativeai
+sentence-transformers
+numpy
+pandas
+scikit-learn
+Pillow

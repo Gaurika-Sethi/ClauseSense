@@ -42,7 +42,7 @@ ClauseSense uses modular agents, each responsible for one phase:
 | 6 | Report Agent | Final text & JSON report |
 | 7 | AI Enhancements | Explanations, confidence scoring, severity classification |
 | 8 | Streamlit UI | Upload + report interface |
-| 29 | Deployment | Streamlit Cloud deployment |
+| 9 | Deployment | Streamlit Cloud deployment |
 
 ## Gemini Integration
 

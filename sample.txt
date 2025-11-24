@@ -1,2 +1,0 @@
-All user data must remain confidential and cannot be shared with third parties.
-Employees should store customer emails securely.
